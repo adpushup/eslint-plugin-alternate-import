@@ -3,13 +3,12 @@
 	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
-	"scripts": {
-		"preinstall": "npm install"
-	},
+	"scripts": {},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
-	"devDependencies": {
+	"devDependencies": {},
+	"dependencies": {
 		"@babel/parser": "^7.7.7",
 		"@babel/traverse": "^7.7.4"
 	}
