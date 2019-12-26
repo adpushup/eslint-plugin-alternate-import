@@ -48,7 +48,7 @@ function checkCustomFileImport(
 	let alternatePackageCode;
 	try {
 		alternatePackageCode = fs
-			.readFileSync(path.join(__dirname, '..', '..', matchedRestrictedPackage.alternate))
+			.readFileSync(path.join(process.cwd(), matchedRestrictedPackage.alternate))
 			.toString();
 	} catch (err) {
 		return context.report({
