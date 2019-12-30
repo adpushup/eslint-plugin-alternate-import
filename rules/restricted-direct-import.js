@@ -114,6 +114,44 @@ module.exports = {
 		];
 
 		return {
+			VariableDeclaration(node) {
+				const matchedRestrictedPackage = node.declarations.map(obj => {
+					if (obj.init.type === "CallExpression") {
+						// we just need package name and we know it will be always first
+						// argument that's how require works. 
+						// const package = require('package-name')
+						const packageName = obj.init.arguments[0].value
+
+						const matchedRestrictedPackage = alternatePackagesMap.find(
+							obj => obj.original === packageName
+						);
+						if (!matchedRestrictedPackage) return;
+
+						const isAlternateCustomPackage = !!(
+							matchedRestrictedPackage.alternate && matchedRestrictedPackage.alternate.match(/.js$/)
+						);
+		
+						// No Alternate Import Provided
+						if (!matchedRestrictedPackage.alternate) {
+							return context.report({
+								node,
+								message: `Direct import restricted for "${node.source.value}" package.`
+							});
+						}
+
+						// Alternate Node Package Import
+						if (!isAlternateCustomPackage) {
+						} else {
+							return context.report({
+								node,
+								message: `Require restricted for "${packageName}" package, Please use ES6 "import" syntax and use "import from '${
+									matchedRestrictedPackage.alternate
+								}'"`
+							});
+						}
+					}
+				});					
+			},
 			ImportDeclaration(node) {
 				const matchedRestrictedPackage = alternatePackagesMap.find(
 					obj => obj.original === node.source.value
@@ -121,7 +159,19 @@ module.exports = {
 
 				if (!matchedRestrictedPackage) return;
 
-				const importedVariableNames = node.specifiers.map(({ imported: { name } }) => name);
+				const importedVariableNames = node.specifiers.map((item) => {
+					let name = ''
+					switch (item.type) {
+						case 'ImportSpecifier':
+							name = item.imported.name
+							break;
+						case 'ImportDefaultSpecifier':
+							case 'ImportNamespaceSpecifier':
+							name = item.local.name
+							break;
+					}
+					return name
+				});
 
 				const isAlternateCustomPackage = !!(
 					matchedRestrictedPackage.alternate && matchedRestrictedPackage.alternate.match(/.js$/)
