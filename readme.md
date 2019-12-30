@@ -79,4 +79,52 @@ Eg: Instead of using moment.js for some basic time manipulation you can use some
 }
 ```
 
+
+# Treeshaking (Our Use Case)
+
+Consider a case where you use 
+```js
+   import { Row, Col, Panel } from 'bootstrap'
+```
+
+During build you will find that it includes complete code of 'bootstrap' package.
+
+To get the benefit of tree-shaking you need to change you code to
+
+```js
+   import Row from 'bootstrap/lib/Row'
+   import Col from 'bootstrap/lib/Col'
+   import Panel from 'bootstrap/lib/Panel'
+```
+which is not actually a good thing to update all the imports in each and every file of the project.
+
+A better way to do this(in our opinion) would be to create a common utility type file and import individual items and export individually from that new file like
+
+`bootstrap-helper-import.js`
+
+```js
+   import Row from 'bootstrap/lib/Row'
+   import Col from 'bootstrap/lib/Col'
+   import Panel from 'bootstrap/lib/Panel'
+
+    export {
+        Row,
+        Col,
+        Panel
+    }
+```
+and use it as
+
+```js
+   import { Row, Col, Panel } from './util/bootstrap-helper-import' //This will tree-shake
+```
+instead of
+
+```js
+   import { Row, Col, Panel } from 'bootstrap'
+```
+
+Just do `find and replace all` to replace `from 'bootstrap'` to `from './util/bootstrap-helper-import'` and use this plugin to create rule that support suggesting `custom file` instead of a `npm package`
+
+
 ## License
