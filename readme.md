@@ -19,6 +19,7 @@ $ npm install eslint-plugin-alternate-import --save-dev
 
 Following is a sample configuration for how to restrict a package and suggest alternatives. It support both ES6 `import` and ES5 `require()` syntax.
 
+`.eslintrc`
 
 ```json5
 {
@@ -26,15 +27,15 @@ Following is a sample configuration for how to restrict a package and suggest al
     "alternate-import": {
         "alternatePackagesMap": [
             {
-                "original": "restricted-package-name", // use alternate instead of original
-                "alternate": "alternate-package-name"
+                "original": "restricted-package-name",
+                "alternate": "alternate-package-name" // use alternate instead of original
             },
             {
-                "original": "react-bootstrap", // import from file instead of original package
-                "alternate": "/react-bootstrap-imports.js"
+                "original": "restricted-package-name",
+                "alternate": "/old-package-imports.js" // import from file instead of original package
             },
             {
-                "original": "restricted-package-name" // Restric package but do not suggest any alternative
+                "original": "restricted-package-name" // Restrict package but do not suggest any alternative
             }
         ],
         "customFileImportRootPrefix": "@" // Prepend static path to alternate custom file(s) 
@@ -55,6 +56,8 @@ Eg: Instead of using moment.js for some basic time manipulation you can use some
 3. Restrict the use of package(s) for which we know some better alternatives.
 4. Restrict use of package(s) which may have compatibility issues with current dependencies and environment.
 
+`.eslintrc`
+
 ```json5
 {
   "settings": {
@@ -70,7 +73,7 @@ Eg: Instead of using moment.js for some basic time manipulation you can use some
             },
             {
                 "original": "package-with-lots-of-unwanted-code",
-                "alternate": "/react-bootstrap-imports.js" // use import from file instead of original package - less code
+                "alternate": "/old-package-imports.js" // use import from file instead of original package - less code
             }
 
         ]
