@@ -17,9 +17,7 @@ $ npm install eslint-plugin-alternate-import --save-dev
 
 # Configuration
 
-You need to specify individual rules and add extra configuration as per your requirement. Following is a sample example which includes specification for how to restrict a package and suggest alternatives.
-
-Support for both ES6 `import` and ES5 `require()` syntax
+Following is a sample configuration for how to restrict a package and suggest alternatives. It support both ES6 `import` and ES5 `require()` syntax.
 
 
 ```json5
@@ -39,23 +37,23 @@ Support for both ES6 `import` and ES5 `require()` syntax
                 "original": "restricted-package-name" // Restric package but do not suggest any alternative
             }
         ],
-        "customFileImportRootPrefix": "@" // Prepend static path to alternate file(s) 
+        "customFileImportRootPrefix": "@" // Prepend static path to alternate custom file(s) 
     },
   }
 }
 ```
 
 
-## Why this plugin ?
+## Why this plugin?
 
-As a owner of the project you need to be sure that your project does not include any of the known possible bad or unnecessary npm package(s). With this, you can restrict use of those kind of npm packages in your project and can suggest better alternative.
+As an owner of the project, you need to be sure that your project does not include any of the known possible bad or unnecessary npm package(s). With this, you can restrict the use of those kinds of npm packages in your project and can suggest a better alternative.
 
-Eg: Instead of using moment.js for some basic time manipulation you can use some lightweight date library or you can use your own custom utility. But, now you also want to restrict everyone contributong to your project to follow this particula rule. Here you can use this plugin and it will help you in following cases:
+Eg: Instead of using moment.js for some basic time manipulation you can use some lightweight date library or you can use your custom utility. But, now you also want to restrict everyone contributing to your project to follow this particular rule. Here you can use this plugin and it will help you in the following cases:
 
 1. Restrict use of Deprecated package(s).
-2. Restrict use of package(s) with known Security Vulnerabilites.
-3. Restrict use of package(s) for which we know some better alternative.
-4. Restrict use of package(s) which may have compatibility issue with current dependencies and environment.
+2. Restrict the use of package(s) with known Security Vulnerabilities.
+3. Restrict the use of package(s) for which we know some better alternatives.
+4. Restrict use of package(s) which may have compatibility issues with current dependencies and environment.
 
 ```json5
 {
