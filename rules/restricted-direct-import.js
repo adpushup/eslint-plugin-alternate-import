@@ -159,23 +159,26 @@ module.exports = {
 
 				if (!matchedRestrictedPackage) return;
 
-				const importedVariableNames = node.specifiers.map((item) => {
-					let name = ''
-					switch (item.type) {
-						case 'ImportSpecifier':
-							name = item.imported.name
-							break;
-						case 'ImportDefaultSpecifier':
-							case 'ImportNamespaceSpecifier':
-							name = item.local.name
-							break;
-					}
-					return name
-				});
-
 				const isAlternateCustomPackage = !!(
 					matchedRestrictedPackage.alternate && matchedRestrictedPackage.alternate.match(/.js$/)
 				);
+
+				let fix = '';
+				let checkItem = node.specifiers[0];
+				if(checkItem.type == 'ImportSpecifier') {
+					const importedVariableNames = node.specifiers.reduce((specifierList, item) => {
+						if(item.imported.name != item.local.name) {
+							specifierList.push(`${item.imported.name} as ${item.local.name}`)
+						} else {
+							specifierList.push(item.imported.name)
+						}
+						return specifierList;
+					}, []);
+					fix = `{ ${importedVariableNames.join(', ')} }`
+				} else {
+					// for default import specifier
+					fix = node.specifiers.shift().local.name;
+				}
 
 				// No Alternate Import Provided
 				if (!matchedRestrictedPackage.alternate) {
@@ -186,25 +189,23 @@ module.exports = {
 				}
 
 				// Alternate Node Package Import
-				if (!isAlternateCustomPackage) {
-					return reportErrorAndFix(
-						context,
-						node,
-						matchedRestrictedPackage,
-						importedVariableNames,
-						isAlternateCustomPackage
-					);
-				}
-
-				// Alternate Custom File Import
-				return checkCustomFileImport(
-					matchedRestrictedPackage,
-					context,
+				return context.report({
 					node,
-					importedVariableNames,
-					isAlternateCustomPackage,
-					customFileImportRootPrefix
-				);
+					message: `Direct import restricted for "${node.source.value}" package.`,
+					fix: function(fixer) {
+						return fixer.replaceText(
+							node,
+							`import ${fix} from '${
+								!isAlternateCustomPackage
+									? `${matchedRestrictedPackage.alternate}`
+									: `${customFileImportRootPrefix}${matchedRestrictedPackage.alternate.replace(
+											/.js$/,
+											''
+									  )}`
+							}';`
+						);
+					}
+				});
 			}
 		};
 	}
