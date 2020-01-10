@@ -24,7 +24,7 @@ function reportErrorAndFix(
 		fix: function(fixer) {
 			return fixer.replaceText(
 				node,
-				`import { ${importedVariableNames.join(', ')} } from '${
+				`import ${importedVariableNames} from '${
 					!isAlternateCustomPackage
 						? `${matchedRestrictedPackage.alternate}`
 						: `${customFileImportRootPrefix}${matchedRestrictedPackage.alternate.replace(
@@ -79,12 +79,21 @@ function checkCustomFileImport(
 
 	return traverse(alternatePackageAST, {
 		ExportNamedDeclaration: function(path) {
-			const exportedVariableNames = path.node.specifiers.map(({ exported: { name } }) => name);
-
-			const missingExportInAlternatePackage = importedVariableNames.filter(
+			const exportedVariableNames = path.node.specifiers.map(({ exported: { name } }) => name);			
+			const missingExportInAlternatePackage = (typeof importedVariableNames == 'string')?
+			([importedVariableNames]) : (importedVariableNames.map((importedVariableName) => {
+				if(importedVariableName.indexOf('as') != -1) {
+					// remove local name and use orignal export name
+					// to verify its exported from the module by removing its
+					// alias name
+					let arr = importedVariableName.split('as')
+					return arr[0] && arr[0].trim();
+				} else {
+					return importedVariableName
+				}
+			}).filter(
 				importedVariableName => exportedVariableNames.indexOf(importedVariableName) === -1
-			);
-
+			));
 			return reportErrorAndFix(
 				context,
 				node,
@@ -115,7 +124,7 @@ module.exports = {
 
 		return {
 			VariableDeclaration(node) {
-				const matchedRestrictedPackage = node.declarations.map(obj => {
+				node.declarations.map(obj => {
 					if (obj.init.type === "CallExpression") {
 						// we just need package name and we know it will be always first
 						// argument that's how require works. 
@@ -163,10 +172,10 @@ module.exports = {
 					matchedRestrictedPackage.alternate && matchedRestrictedPackage.alternate.match(/.js$/)
 				);
 
-				let fix = '';
+				let importedVariableNames = [];
 				let checkItem = node.specifiers[0];
 				if(checkItem.type == 'ImportSpecifier') {
-					const importedVariableNames = node.specifiers.reduce((specifierList, item) => {
+					importedVariableNames = node.specifiers.reduce((specifierList, item) => {
 						if(item.imported.name != item.local.name) {
 							specifierList.push(`${item.imported.name} as ${item.local.name}`)
 						} else {
@@ -174,12 +183,13 @@ module.exports = {
 						}
 						return specifierList;
 					}, []);
-					fix = `{ ${importedVariableNames.join(', ')} }`
+					importedVariableNames = `{ ${importedVariableNames.join(', ')} }`
+				} else if(checkItem.type == 'ImportNamespaceSpecifier') {
+					importedVariableNames = `* as ${node.specifiers.shift().local.name}`
 				} else {
 					// for default import specifier
-					fix = node.specifiers.shift().local.name;
+					importedVariableNames = node.specifiers.shift().local.name
 				}
-
 				// No Alternate Import Provided
 				if (!matchedRestrictedPackage.alternate) {
 					return context.report({
@@ -187,25 +197,36 @@ module.exports = {
 						message: `Direct import restricted for "${node.source.value}" package.`
 					});
 				}
-
 				// Alternate Node Package Import
-				return context.report({
+				if (!isAlternateCustomPackage) {
+					return context.report({
+						node,
+						message: `Direct import restricted for "${node.source.value}" package.`,
+						fix: function(fixer) {
+							return fixer.replaceText(
+								node,
+								`import ${importedVariableNames} from '${
+									!isAlternateCustomPackage
+										? `${matchedRestrictedPackage.alternate}`
+										: `${customFileImportRootPrefix}${matchedRestrictedPackage.alternate.replace(
+												/.js$/,
+												''
+										  )}`
+								}';`
+							);
+						}
+					});	
+				}
+
+				// Alternate Custom File Import
+				return checkCustomFileImport(
+					matchedRestrictedPackage,
+					context,
 					node,
-					message: `Direct import restricted for "${node.source.value}" package.`,
-					fix: function(fixer) {
-						return fixer.replaceText(
-							node,
-							`import ${fix} from '${
-								!isAlternateCustomPackage
-									? `${matchedRestrictedPackage.alternate}`
-									: `${customFileImportRootPrefix}${matchedRestrictedPackage.alternate.replace(
-											/.js$/,
-											''
-									  )}`
-							}';`
-						);
-					}
-				});
+					importedVariableNames,
+					isAlternateCustomPackage,
+					customFileImportRootPrefix
+				);
 			}
 		};
 	}
